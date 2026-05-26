@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Identity - Welcome">
+    <title>Identity Application</title>
+    <link rel="icon" href="./assets/favicon/favicon-32x32.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/identity-application/identity-application.css">
+</head>
+<body>
+    <div id="root">
+        <header class="header">
+            <img src="./assets/identity-application/RealMeLogo.4d9c8bd4edc2db51cd44cd84562fa0dc.svg" alt="RealMe Logo" class="header-logo realme-logo">
+            <div class="vertical-divider" role="separator"></div>
+            <img src="./assets/identity-application/Group.4aefa3427e24cf2a43194b494158a098.svg" alt="Internal Affairs logo" class="header-logo group-logo">
+        </header>
+
+        <main class="main-content">
+            <form id="identityIntroForm">
+                <div class="intro">
+                    <h1 class="intro-title-mi" lang="mi-NZ">Tono i tētahi tuakiri hāpono</h1>
+                    <hr>
+                    <h1 class="intro-title">Apply for your verified identity</h1>
+
+                    <div class="step-container">
+                        <h2 class="step-title mb-4">How it works </h2>
+
+                        <div class="step-wrapper">
+                            <div class="step-imgbx">
+                                <img src="./assets/identity-application/Verified.5124bca630d18f075c1e20642357200f.svg" alt="">
+                            </div>
+                            <div>
+                                <h3 class="step-heading mb-2">1. Tell us who you are</h3>
+                                <p class="step-text">Provide the details from <strong>one</strong> of the following official identity documents.</p>
+                                <ul class="step-listing">
+                                    <li class="step-item">
+                                        <span class="hover-container">NZ passport<span class="hover-tooltip">You can use an expired passport.</span></span>
+                                    </li>
+                                    <li class="step-item">NZ birth certificate</li>
+                                    <li class="step-item">NZ citizenship certificate</li>
+                                    <li class="step-item">Overseas passport or NZ immigration travel document</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="step-wrapper align-items-center">
+                            <div class="step-imgbx">
+                                <img src="./assets/identity-application/Camera.fde97ca7cc7d72d7fe2ba09d8d2e7beb.svg" alt="">
+                            </div>
+                            <h3 class="step-heading mb-0">2. Take a live photo using your device</h3>
+                        </div>
+
+                        <div class="step-wrapper align-items-center">
+                            <div class="step-imgbx">
+                                <img src="./assets/identity-application/Computer.c6bcd84958b63549ea32f4167f50c972.svg" alt="">
+                            </div>
+                            <h3 class="step-heading mb-0">3. In some cases, you'll need an identity referee to confirm your details</h3>
+                        </div>
+                    </div>
+
+                    <h2 class="step-title mb-2">Terms of use</h2>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="terms-checkbox" class="terms-check" name="terms">
+                        <label class="terms-label" for="terms-checkbox">I accept the <a href="https://www.realme.govt.nz/terms-use/identity-verification-service-terms-use/" target="_blank" rel="noopener noreferrer">RealMe Verified Identity Terms of use</a><span class="req-text">*</span></label>
+                    </div>
+                </div>
+
+                <div class="step-button-container spacer-64">
+                    <button class="step-btn get-started" id="getStartedBtn" type="submit" disabled>
+                        <img src="./assets/identity-application/ProceedIcon.3ea1943b31fd246846cf6aee2f1c475d.svg" alt="">
+                        Get Started
+                    </button>
+                    <button class="step-btn cancel-btn" id="cancelBtn" type="button">
+                        <img src="./assets/identity-application/Cancel.5bb3bc7b045da4041fb71ed4685ec227.svg" alt="">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </main>
+
+        <footer class="footer">
+            <div class="inner">
+                <div class="footer-links">
+                    <nav>
+                        <a href="./help.html" rel="noopener noreferrer">Help &amp; contact us</a>
+                        <a href="https://www.realme.govt.nz/terms-use/identity-verification-service-terms-use/" rel="noopener noreferrer" target="_blank">Terms of use</a>
+                        <a href="./protecting-your-privacy.html" rel="noopener noreferrer">Privacy</a>
+                        <a href="./about-us.html" rel="noopener noreferrer">About this site</a>
+                    </nav>
+                </div>
+                <div class="footer-divider"></div>
+                <div class="footer-copyright">
+                    <p>© New Zealand Government.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="./assets/identity-application/identity-application.js"></script>
+</body>
+</html>

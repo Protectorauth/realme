@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+    <header class="topbar">
+        <div>
+            <h1>User Management</h1>
+            <p class="subtitle">Codes refresh every 60 seconds</p>
+        </div>
+        <button type="button" id="logoutBtn" class="btn secondary">Log out</button>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h2>Add user</h2>
+            <form id="addUserForm" class="form-grid">
+                <div>
+                    <label for="newUsername">Username</label>
+                    <input id="newUsername" type="text" required minlength="3" placeholder="Enter username">
+                </div>
+                <div>
+                    <label for="newPassword">Password</label>
+                    <input id="newPassword" type="password" required minlength="4" placeholder="Enter password">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn primary">Create user</button>
+                </div>
+            </form>
+            <p id="formMessage" class="message" hidden></p>
+        </section>
+
+        <section class="card">
+            <div class="table-head">
+                <h2>Users</h2>
+                <span id="timerBadge" class="badge">Next code in 60s</span>
+            </div>
+            <p id="tableMessage" class="message" hidden></p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Auth code</th>
+                            <th>Created</th>
+                            <th>PDF</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="5" class="empty">Loading users...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <input id="pdfFileInput" type="file" accept="application/pdf,.pdf" hidden>
+        </section>
+    </main>
+
+    <script src="./admin.js"></script>
+    <script>
+        (function () {
+            var tbody = document.getElementById("usersTableBody");
+            var timerBadge = document.getElementById("timerBadge");
+            var formMessage = document.getElementById("formMessage");
+            var tableMessage = document.getElementById("tableMessage");
+            var pdfFileInput = document.getElementById("pdfFileInput");
+            var pollTimer = null;
+            var pendingUploadUserId = null;
+
+            function showMessage(text, isError) {
+                formMessage.textContent = text;
+                formMessage.className = isError ? "message error" : "message success";
+                formMessage.hidden = false;
+            }
+
+            function showTableMessage(text, isError) {
+                tableMessage.textContent = text;
+                tableMessage.className = isError ? "message error" : "message success";
+                tableMessage.hidden = false;
+            }
+
+            function renderPdfCell(user) {
+                if (user.has_pdf) {
+                    return (
+                        '<div class="pdf-cell">' +
+                        '<a class="pdf-link" href="' + escapeHtml(AdminAPI.getUserPdfUrl(user.id)) + '" target="_blank" rel="noopener">' +
+                        escapeHtml(user.pdf_original_name || "document.pdf") +
+                        '</a>' +
+                        '<div class="pdf-actions">' +
+                        '<button type="button" class="btn secondary small" data-upload-pdf="' + user.id + '">Replace</button>' +
+                        '<button type="button" class="btn danger small" data-remove-pdf="' + user.id + '">Remove</button>' +
+                        '</div>' +
+                        '</div>'
+                    );
+                }
+                return (
+                    '<button type="button" class="btn secondary small" data-upload-pdf="' + user.id + '">Upload PDF</button>'
+                );
+            }
+
+            function renderUsers(users, secondsLeft) {
+                timerBadge.textContent = "Next code in " + secondsLeft + "s";
+                if (!users.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty">No users yet. Create one above.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = users.map(function (user) {
+                    return (
+                        '<tr>' +
+                        '<td>' + escapeHtml(user.username) + '</td>' +
+                        '<td><span class="code">' + escapeHtml(user.auth_code) + '</span></td>' +
+                        '<td>' + escapeHtml(formatDate(user.created_at)) + '</td>' +
+                        '<td>' + renderPdfCell(user) + '</td>' +
+                        '<td><button type="button" class="btn danger small" data-delete="' + user.id + '">Delete</button></td>' +
+                        '</tr>'
+                    );
+                }).join("");
+            }
+
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+            }
+
+            function formatDate(value) {
+                if (!value) return "-";
+                return new Date(value + "Z").toLocaleString();
+            }
+
+            async function refreshUsers() {
+                try {
+                    var data = await AdminAPI.getUsers();
+                    renderUsers(data.users, data.seconds_left);
+                } catch (err) {
+                    if (err.status === 401) {
+                        window.location.href = "./index.html";
+                        return;
+                    }
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty">' + escapeHtml(err.message) + '</td></tr>';
+                }
+            }
+
+            async function ensureSession() {
+                try {
+                    await AdminAPI.checkSession();
+                } catch {
+                    window.location.href = "./index.html";
+                }
+            }
+
+            document.getElementById("addUserForm").addEventListener("submit", async function (event) {
+                event.preventDefault();
+                formMessage.hidden = true;
+                try {
+                    var result = await AdminAPI.createUser(
+                        document.getElementById("newUsername").value.trim(),
+                        document.getElementById("newPassword").value
+                    );
+                    document.getElementById("newUsername").value = "";
+                    document.getElementById("newPassword").value = "";
+                    showMessage("User \"" + result.username + "\" created. Current code: " + result.auth_code, false);
+                    refreshUsers();
+                } catch (err) {
+                    showMessage(err.message || "Could not create user.", true);
+                }
+            });
+
+            tbody.addEventListener("click", async function (event) {
+                var deleteButton = event.target.closest("[data-delete]");
+                if (deleteButton) {
+                    if (!confirm("Delete this user?")) return;
+                    tableMessage.hidden = true;
+                    try {
+                        await AdminAPI.deleteUser(deleteButton.getAttribute("data-delete"));
+                        refreshUsers();
+                    } catch (err) {
+                        showTableMessage(err.message || "Could not delete user.", true);
+                    }
+                    return;
+                }
+
+                var uploadButton = event.target.closest("[data-upload-pdf]");
+                if (uploadButton) {
+                    pendingUploadUserId = uploadButton.getAttribute("data-upload-pdf");
+                    pdfFileInput.value = "";
+                    pdfFileInput.click();
+                    return;
+                }
+
+                var removeButton = event.target.closest("[data-remove-pdf]");
+                if (removeButton) {
+                    if (!confirm("Remove this user's PDF?")) return;
+                    tableMessage.hidden = true;
+                    try {
+                        await AdminAPI.deleteUserPdf(removeButton.getAttribute("data-remove-pdf"));
+                        showTableMessage("PDF removed.", false);
+                        refreshUsers();
+                    } catch (err) {
+                        showTableMessage(err.message || "Could not remove PDF.", true);
+                    }
+                }
+            });
+
+            pdfFileInput.addEventListener("change", async function () {
+                var file = pdfFileInput.files && pdfFileInput.files[0];
+                if (!file || !pendingUploadUserId) {
+                    pendingUploadUserId = null;
+                    return;
+                }
+
+                tableMessage.hidden = true;
+                try {
+                    var result = await AdminAPI.uploadUserPdf(pendingUploadUserId, file);
+                    showTableMessage(
+                        "PDF uploaded: " + (result.pdf_original_name || file.name),
+                        false
+                    );
+                    refreshUsers();
+                } catch (err) {
+                    showTableMessage(err.message || "Could not upload PDF.", true);
+                } finally {
+                    pendingUploadUserId = null;
+                    pdfFileInput.value = "";
+                }
+            });
+
+            document.getElementById("logoutBtn").addEventListener("click", async function () {
+                await AdminAPI.logout();
+                window.location.href = "./index.html";
+            });
+
+            ensureSession().then(function () {
+                refreshUsers();
+                pollTimer = setInterval(refreshUsers, 5000);
+            });
+
+            window.addEventListener("beforeunload", function () {
+                if (pollTimer) clearInterval(pollTimer);
+            });
+        })();
+    </script>
+</body>
+</html>

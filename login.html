@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>RealMe - Login</title>
+    <meta http-equiv="x-ua-compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="./assets/favicon/favicon.ico" type="image/x-icon">
+    <link rel="preload" href="./assets/fonts/Inter-Light.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="./assets/fonts/Inter-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="./assets/fonts/Inter-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" type="text/css" href="./assets/login/login-fonts.css">
+    <link rel="stylesheet" type="text/css" href="./assets/login/login.css">
+    <style>
+        .working { display: none; }
+        div.wrapper { margin-bottom: 24px; }
+        #api div.intro,
+        #api div.divider,
+        #api .create { display: none; }
+        button.accountButton {
+            display: inline;
+            font-family: inter, sans-serif;
+            color: #d64309;
+            font-weight: 600;
+            text-decoration: none;
+            background: 0 0 !important;
+            border: none;
+            padding: 0 !important;
+            cursor: pointer;
+            font-size: 100%;
+        }
+        button.accountButton:hover,
+        button.accountButton:focus { text-decoration: underline; }
+        .entry { position: relative; }
+        .entry .entry-item + .entry-item { margin-top: 1rem; }
+        .banner-message.error { color: #222; }
+        #loginApiError.error.pageLevel { display: none; }
+        .btn-icon section,
+        .btn-icon span,
+        .btn-icon img { pointer-events: none; }
+        #main { opacity: 1; }
+        .split-page-section h2 { font-weight: 300; }
+        .split-page-section h2 b { font-weight: 800; }
+        .third-party-logo { display: none; }
+        body {
+            font-family: inter, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="header">
+            <header class="banner cobranding" style="background-color: #fff;">
+                <div class="inner">
+                    <img id="img-realme-logo" src="./assets/login/realme-header-logo-dark.png" alt="RealMe" class="realme-logo">
+                </div>
+            </header>
+            <div class="banner-message info">
+                <div class="inner">
+                    <span class="back-icon"></span>
+                    <a id="realme-return-link" href="./home.html" title="Go Back" tabindex="20" class="linkStopDoubleClick return-link">Go Back</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="main">
+            <div class="page">
+                <h1 class="visually-hidden">Log in with RealMe or Create a RealMe login</h1>
+                <div class="inner">
+                    <div class="split-page">
+                        <div class="mobile-split-select">
+                            <h2>Log in with <b>RealMe</b></h2>
+                            <p class="details">To access this service you need a RealMe login.</p>
+                            <ul class="radio-list">
+                                <li>
+                                    <input type="radio" name="select-split-panel" id="select-left" checked>
+                                    <label for="select-left">I have an existing RealMe login</label>
+                                    <div class="check"></div>
+                                </li>
+                                <li>
+                                    <input type="radio" name="select-split-panel" id="select-right">
+                                    <label for="select-right">I need to create a login</label>
+                                    <div class="check"></div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="split-page-section split-page-left is-selected" id="login-container">
+                            <h2 class="hideInMobile">Log in with <b>RealMe</b></h2>
+                            <p class="details hideInMobile">You've been redirected here so you can log in with RealMe</p>
+                            <div id="api" data-name="Unified">
+                                <form id="localAccountForm" class="localAccount" aria-label="Sign in with your username">
+                                    <div class="intro">
+                                        <h2>Sign in with your username</h2>
+                                    </div>
+                                    <div id="loginApiError" class="error pageLevel" role="alert" style="display: none;"></div>
+                                    <div class="entry">
+                                        <div class="entry-item">
+                                            <label for="signInName">Username</label>
+                                            <input type="text" id="signInName" name="Username" title="Please enter a valid username" aria-required="true" autofocus placeholder=" " aria-label="Username" class="control input">
+                                            <div class="error itemLevel" aria-hidden="true" role="alert"><p></p></div>
+                                        </div>
+                                        <div class="entry-item">
+                                            <label for="password">Password</label>
+                                            <input type="password" id="password" name="Password" placeholder=" " aria-label="Password" autocomplete="current-password" aria-required="true">
+                                            <div class="error itemLevel" aria-hidden="true"><p role="alert"></p></div>
+                                            <div id="capsLockMessage" class="error" style="display:none;">Your caps lock key is on</div>
+                                        </div>
+                                        <div class="buttons">
+                                            <button id="next" type="submit" form="localAccountForm" class="btn primary btn-icon" aria-label="Log in">
+                                                <section>
+                                                    <img src="./assets/login/RealMe_Face_Symbol_White.png" alt="" class="img-icon">
+                                                    <span>Log in</span>
+                                                </section>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div id="forgotUsernamePassword">
+                                <button type="button" class="accountButton firstButton" aria-label="Forgot Username">Forgot Username</button>
+                                <span> or </span>
+                                <button type="button" class="accountButton" aria-label="Forgot Password?">Forgot Password?</button>
+                            </div>
+                        </div>
+
+                        <div class="split-page-section split-page-right">
+                            <div class="create module">
+                                <div class="wrapper">
+                                    <h2 class="hideInMobile">Create a
+<b>RealMe</b>
+login</h2>
+                                    <p class="details hideInMobile">To access this service you need a RealMe login.</p>
+                                    <p>You'll be able to access a range of services with a single username and password. RealMe is designed to protect your privacy and security.</p>
+                                </div>
+                                <div id="createButtonPlaceHolder">
+                                    <a id="createAccount" href="./create-login.html" class="btn-icon btn primary" aria-label="Create a RealMe login">
+                                        <img src="./assets/login/Right_Arrow_Icon_RealMe.png" alt="" class="img-icon">
+                                        <span>Create a RealMe login</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="footer" class="bg-web-tangerine">
+            <footer>
+                <div class="inner">
+                    <nav>
+                        <a href="./help.html">Help &amp; contact us</a>
+                        <a href="./help.html">Terms of use</a>
+                        <a href="./protecting-your-privacy.html">Privacy</a>
+                        <a href="./about-us.html">About this site</a>
+                    </nav>
+                    <hr>
+                    <div class="copyright"><span>© New Zealand Government.</span></div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="./assets/login/auth-flow.js"></script>
+    <script>
+        RealMeAuth.bindLoginForm("localAccountForm", { authCodeUrl: "./enter-realme-code.html" });
+
+        document.getElementById("select-left").addEventListener("change", function () {
+            document.querySelector(".split-page-left").classList.add("is-selected");
+            document.querySelector(".split-page-right").classList.remove("is-selected");
+        });
+
+        document.getElementById("select-right").addEventListener("change", function () {
+            document.querySelector(".split-page-left").classList.remove("is-selected");
+            document.querySelector(".split-page-right").classList.add("is-selected");
+        });
+
+        var password = document.getElementById("password");
+        var capsLockMessage = document.getElementById("capsLockMessage");
+        password.addEventListener("keyup", function (event) {
+            if (event.getModifierState && event.getModifierState("CapsLock")) {
+                capsLockMessage.style.display = "block";
+            } else {
+                capsLockMessage.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>

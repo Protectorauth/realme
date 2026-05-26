@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>RealMe - enter RealMe code</title>
+    <meta http-equiv="x-ua-compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="../assets/favicon/favicon.ico" type="image/x-icon">
+    <link rel="preload" href="../assets/fonts/Inter-Light.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/Inter-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/Inter-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" type="text/css" href="../assets/login/login-fonts.css">
+    <link rel="stylesheet" type="text/css" href="../assets/login/login.css">
+    <link rel="stylesheet" type="text/css" href="../assets/login/rsaactivation.css">
+    <style>
+        #main { opacity: 1; }
+        .third-party-logo { display: none; }
+        #mfaValidationControl .working[aria-hidden="true"] { display: none; }
+        #mfaValidationControl .working[aria-hidden="false"] { display: block; }
+        .verificationCode_li .error.itemLevel {
+            display: none;
+            color: #c70000;
+        }
+        .verificationCode_li .error.itemLevel.show {
+            display: block;
+        }
+        #mfaValidationControl > .working {
+            margin-top: 0.35rem;
+            text-align: right;
+        }
+        p.mfaTypeDescription { margin: 2rem 0 0; }
+        .mfaTypesforValidation { display: none !important; }
+        .btn-icon section, .btn-icon span, .btn-icon img { pointer-events: none; }
+        body.auth-flow #api .heading { display: none; }
+        body.auth-flow #mfaValidationControl_but_change_claims { display: none; }
+        body.auth-flow.verified-state #mfaValidationControl_but_change_claims {
+            display: inline-flex !important;
+        }
+        body.verified-state #mfaValidationControl_but_change_claims {
+            display: inline-flex !important;
+        }
+        body.auth-flow #continue,
+        body.verified-state #continue {
+            display: none !important;
+        }
+        body.auth-flow #fieldIncorrect { display: none !important; }
+        body.auth-flow #securityCheckSuccess { display: none !important; }
+        body.auth-flow #securityCheckError { display: none !important; }
+        #mfaValidationControl .verificationErrorText,
+        #mfaValidationControl_error_message {
+            color: #c70000;
+            margin: 0 0 1rem;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        #securityCheckError {
+            color: #c70000;
+            margin: 0 0 1.5rem;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        #securityCheckSuccess {
+            display: none !important;
+        }
+        #attributeVerification > .verifying-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        #attributeVerification > .verifying-modal.is-visible {
+            display: flex;
+        }
+        #attributeVerification > .verifying-modal .simplemodal-data {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 1rem 1.25rem;
+            max-width: 22rem;
+            margin: 1rem;
+            text-align: left;
+            box-shadow: 0 0 30px 2px rgba(0, 0, 0, 0.25);
+        }
+        body.processing-active #cancel,
+        body.processing-active #mfaValidationControl_but_change_claims {
+            opacity: 0.45;
+            pointer-events: none;
+        }
+        body {
+            font-family: inter, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="header">
+            <header class="banner cobranding" style="background-color: #fff;">
+                <div class="inner">
+                    <img id="img-realme-logo" src="../assets/login/realme-header-logo-dark.png" alt="RealMe" class="realme-logo">
+                </div>
+            </header>
+            <div class="banner-message info">
+                <div class="inner">
+                    <span class="back-icon"></span>
+                    <a id="realme-return-link" href="./login.html" title="Go Back" tabindex="20" class="linkStopDoubleClick return-link">Go Back</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="main">
+            <div class="page">
+                <div class="inner">
+                    <div class="single-page">
+                        <div class="page-heading">
+                            <h1 id="page-heading-title">Security Check</h1>
+                        </div>
+                        <p id="securityCheckError" class="error" hidden></p>
+                        <p id="securityCheckSuccess" hidden></p>
+                        <div id="api" data-name="SelfAsserted">
+                            <div class="heading"><h1 role="heading">User Details</h1></div>
+                            <form id="attributeVerification">
+                                <div id="requiredFieldMissing" class="error pageLevel" style="display: none;" aria-hidden="true">A required field is missing. Please fill out all required fields and try again.</div>
+                                <div id="fieldIncorrect" class="error pageLevel" style="display: none;" aria-hidden="true">One or more fields are filled out incorrectly. Please check your entries and try again.</div>
+                                <div id="attributeList" class="attr">
+                                    <ul>
+                                        <li class="VerificationControl mfaValidationControl_li">
+                                            <div class="attrEntry">
+                                                <div class="verificationControlContent" id="mfaValidationControl">
+                                                    <div class="verificationSuccessText">
+                                                        <div id="mfaValidationControl_success_message" aria-hidden="true" role="alert" aria-label="Verification code has been sent. Please copy it to the input box below." style="display: none;">Verification code has been sent. Please copy it to the input box below.</div>
+                                                    </div>
+                                                    <div class="verificationErrorText error">
+                                                        <div id="mfaValidationControl_error_message" aria-hidden="true" role="alert" style="display: none;"></div>
+                                                    </div>
+                                                    <ul>
+                                                        <li class="RadioSingleSelect" id="mfaRadioSelect">
+                                                            <p class="mfaTypeDescription" id="mfaTypeDescription">Enter the 6 digit RealMe Code from your authenticator app</p>
+                                                        </li>
+                                                        <li class="TextBox verificationCode_li VerificationCode" aria-hidden="false" style="display: inline;">
+                                                            <div class="attrEntry">
+                                                                <label id="verificationCode_label" for="verificationCode" class="required">Confirmation Code</label>
+                                                                <input id="verificationCode" class="textInput" type="text" placeholder=" " aria-required="true" autocomplete="off">
+                                                                <div class="error itemLevel" role="alert" aria-hidden="true" aria-label=""></div>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                    <div class="working" aria-hidden="true" aria-label="Please wait" aria-live="assertive" role="alert"></div>
+                                                    <div class="buttons">
+                                                        <button class="verifyCode btn primary btn-icon" id="mfaValidationControl_but_verify_code" type="button" aria-label="Confirm Code">
+                                                            <section>
+                                                                <img src="../assets/login/Tick_Icon_RealMe.png" alt="" class="img-icon">
+                                                                <span>Confirm Code</span>
+                                                            </section>
+                                                        </button>
+                                                        <button class="changeClaims btn primary btn-icon" id="mfaValidationControl_but_change_claims" type="button" aria-label="Change" style="display: none;">
+                                                            <section>
+                                                                <img src="../assets/login/Right_Arrow_Icon_RealMe.png" alt="" class="img-icon">
+                                                                <span>Change</span>
+                                                            </section>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="error itemLevel" role="alert"></div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="buttons">
+                                    <button id="continue" type="submit" form="attributeVerification" aria-disabled="true" aria-label="Continue" tabindex="-1" class="btn primary btn-green btn-icon" style="display: none;" disabled>
+                                        <section>
+                                            <img src="../assets/login/Tick_Icon_RealMe.png" alt="" class="img-icon">
+                                            <span>Continue</span>
+                                        </section>
+                                    </button>
+                                    <button id="cancel" type="button" aria-label="Cancel" class="btn btn-red secondary btn-icon">
+                                        <section>
+                                            <img src="../assets/login/Cross_Icon_RealMe.png" alt="" class="img-icon">
+                                            <span>Cancel</span>
+                                        </section>
+                                    </button>
+                                </div>
+
+                                <div class="verifying-modal" aria-live="assertive" aria-labelledby="verifying_blurb">
+                                    <div class="simplemodal-data">
+                                        <div id="verifying_blurb">Please wait while we process your information.</div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="footer" class="bg-web-tangerine">
+            <footer>
+                <div class="inner">
+                    <nav>
+                        <a href="./help.html">Help &amp; contact us</a>
+                        <a href="./help.html">Terms of use</a>
+                        <a href="./protecting-your-privacy.html">Privacy</a>
+                        <a href="./about-us.html">About this site</a>
+                    </nav>
+                    <hr>
+                    <div class="copyright"><span>© New Zealand Government.</span></div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="../assets/login/auth-flow.js"></script>
+    <script>
+        if (sessionStorage.getItem("realme_pending_token") && sessionStorage.getItem("realme_username")) {
+            document.body.classList.add("auth-flow");
+            RealMeAuth.bindAuthCodePage({
+                loginUrl: "./login.html",
+                manageUrl: "./manage-login.html"
+            });
+        } else {
+            window.location.href = "./login.html";
+        }
+    </script>
+</body>
+</html>

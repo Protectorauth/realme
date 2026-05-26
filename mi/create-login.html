@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>RealMe - create a login</title>
+    <meta http-equiv="x-ua-compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="../assets/favicon/favicon.ico" type="image/x-icon">
+    <link rel="preload" href="../assets/fonts/Inter-Light.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/Inter-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/Inter-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" type="text/css" href="../assets/login/login-fonts.css">
+    <link rel="stylesheet" type="text/css" href="../assets/login/login.css">
+    <style>
+        .working { display: none; }
+        #main { opacity: 1; }
+        .third-party-logo { display: none; }
+        #cancel { display: none !important; }
+        .btn-icon section,
+        .btn-icon span,
+        .btn-icon img { pointer-events: none; }
+        body {
+            font-family: inter, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="header">
+            <header class="banner cobranding" style="background-color: #fff;">
+                <div class="inner">
+                    <img id="img-realme-logo" src="../assets/login/realme-header-logo-dark.png" alt="RealMe" class="realme-logo">
+                </div>
+            </header>
+            <div class="banner-message info">
+                <div class="inner">
+                    <span class="back-icon"></span>
+                    <a id="realme-return-link" href="./login.html" title="Go Back" tabindex="20" class="linkStopDoubleClick return-link">Go Back</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="main">
+            <div class="page">
+                <div class="inner">
+                    <div class="single-page">
+                        <div class="page-heading">
+                            <h1 id="page-heading-title">Set up your account</h1>
+                        </div>
+                        <div id="api" data-name="SelfAsserted">
+                            <div class="heading">
+                                <h1 role="heading">User Details</h1>
+                            </div>
+                            <form id="attributeVerification">
+                                <div id="requiredFieldMissing" class="error pageLevel" style="display: none;" aria-hidden="true">A required field is missing. Please fill out all required fields and try again.</div>
+                                <div id="fieldIncorrect" class="error pageLevel" style="display: none;" aria-hidden="true">One or more fields are filled out incorrectly. Please check your entries and try again.</div>
+                                <div id="attributeList" class="attr">
+                                    <ul>
+                                        <li class="VerificationControl emailVerificationControl-CreateLogin_li">
+                                            <p class="small">To set up an account you will need to confirm your email address:</p>
+                                            <ul class="list-style-red-dot small list-inline">
+                                                <li>Enter your email address and click the Send Code button</li>
+                                                <li>Check your email to retrieve the Code</li>
+                                                <li>Enter the code in the Confirmation Code field</li>
+                                                <li>Click the Confirm Code button</li>
+                                            </ul>
+                                            <br>
+                                            <div class="attrEntry">
+                                                <div class="verificationControlContent" id="emailVerificationControl-CreateLogin">
+                                                    <div class="verificationSuccessText">
+                                                        <div id="emailVerificationControl-CreateLogin_success_message" aria-hidden="true" role="alert" style="display: none;"></div>
+                                                    </div>
+                                                    <ul>
+                                                        <li class="TextBox email_li Email" aria-hidden="false" style="display: inline;">
+                                                            <div class="attrEntry">
+                                                                <label id="email_label" for="email" class="required required-input">Email Address</label>
+                                                                <input id="email" class="textInput" type="text" placeholder=" " title="Email address that can be used to contact you." aria-required="true" autofocus>
+                                                                <div class="error itemLevel" role="alert"></div>
+                                                            </div>
+                                                        </li>
+                                                        <li class="TextBox verificationCode_li VerificationCode" aria-hidden="true" style="display: none;">
+                                                            <div class="attrEntry">
+                                                                <label id="verificationCode_label" for="verificationCode" class="required required-input">Confirmation Code</label>
+                                                                <input id="verificationCode" class="textInput" type="text" placeholder=" " aria-required="true" autocomplete="off">
+                                                                <div class="error itemLevel" role="alert"></div>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                    <div class="buttons">
+                                                        <button class="sendCode btn primary btn-icon" id="emailVerificationControl-CreateLogin_but_send_code" type="button" aria-label="Send Code">
+                                                            <section>
+                                                                <img src="../assets/login/Right_Arrow_Icon_RealMe.png" alt="" class="img-icon">
+                                                                <span>Send Code</span>
+                                                            </section>
+                                                        </button>
+                                                        <button class="verifyCode btn primary btn-icon" id="emailVerificationControl-CreateLogin_but_verify_code" type="button" aria-label="Confirm Code" aria-hidden="true" style="display: none;">
+                                                            <section>
+                                                                <img src="../assets/login/Tick_Icon_RealMe.png" alt="" class="img-icon">
+                                                                <span>Confirm Code</span>
+                                                            </section>
+                                                        </button>
+                                                        <button class="sendNewCode btn primary btn-icon" id="emailVerificationControl-CreateLogin_but_send_new_code" type="button" aria-label="Send New Code" aria-hidden="true" style="display: none;">
+                                                            <section>
+                                                                <img src="../assets/login/Right_Arrow_Icon_RealMe.png" alt="" class="img-icon">
+                                                                <span>Send New Code</span>
+                                                            </section>
+                                                        </button>
+                                                        <button class="changeClaims btn primary btn-icon" id="emailVerificationControl-CreateLogin_but_change_claims" type="button" aria-label="Change" aria-hidden="true" style="display: none;">
+                                                            <section>
+                                                                <img src="../assets/login/Right_Arrow_Icon_RealMe.png" alt="" class="img-icon">
+                                                                <span>Change</span>
+                                                            </section>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="error itemLevel" role="alert"></div>
+                                            </div>
+                                        </li>
+                                        <li class="TextBox newSignInName_li">
+                                            <div class="attrEntry">
+                                                <label id="newSignInName_label" for="newSignInName" class="required required-input">Username</label>
+                                                <input id="newSignInName" class="textInput" type="text" placeholder=" " aria-required="true" aria-disabled="true" disabled>
+                                                <div class="error itemLevel" role="alert"></div>
+                                                <span class="hint-message">Minimum 4 characters.</span>
+                                            </div>
+                                        </li>
+                                        <hr>
+                                        <fieldset aria-labelledby="passwordLegend">
+                                            <legend id="passwordLegend">Password</legend>
+                                            <li class="Password newPassword_li">
+                                                <div id="password-requirements">
+                                                    <p class="small">Your password must be between 8 and 64 characters long. It must contain at least three (3) of the below:</p>
+                                                    <ul class="list-style-red-dot small table-list">
+                                                        <li>uppercase (A-Z)</li>
+                                                        <li>lowercase (a-z)</li>
+                                                        <li>numbers (0-9)</li>
+                                                        <li aria-label="symbols: at, hash, dollar, percent, caret, ampersand, asterisk, hyphen, underscore, exclamation mark, plus, equals, open bracket, close bracket, open brace, close brace, vertical bar, backslash, colon, apostrophe, comma, period, question mark, forward slash, backtick, tilde, double quote, open parenthesis, close parenthesis, semicolon, less than, greater than">symbols (@ # $ % ^ &amp; * - _ ! + = [ ] { } | \ : ' , . ? / ` ~ " ( ) ; &lt; &gt;)</li>
+                                                    </ul>
+                                                    <br>
+                                                </div>
+                                                <div class="attrEntry">
+                                                    <label id="newPassword_label" for="newPassword" class="required required-input">Password</label>
+                                                    <input id="newPassword" class="textInput" type="password" placeholder=" " title="Enter new password" autocomplete="new-password" aria-required="true" aria-disabled="true" aria-describedby="password-requirements" disabled>
+                                                    <div class="error itemLevel" role="alert"></div>
+                                                </div>
+                                            </li>
+                                            <li class="Password reenterPassword_li">
+                                                <div class="attrEntry">
+                                                    <label id="reenterPassword_label" for="reenterPassword" class="required required-input">Password (again)</label>
+                                                    <input id="reenterPassword" class="textInput" type="password" placeholder=" " title="Confirm new password" autocomplete="new-password" aria-required="true" aria-disabled="true" disabled>
+                                                    <div class="error itemLevel" role="alert"></div>
+                                                </div>
+                                            </li>
+                                        </fieldset>
+                                    </ul>
+                                </div>
+                                <div class="buttons">
+                                    <button id="continue" type="submit" form="attributeVerification" aria-disabled="true" aria-label="Continue" tabindex="-1" class="btn primary btn-green btn-icon" disabled>
+                                        <section>
+                                            <img src="../assets/login/Tick_Icon_RealMe.png" alt="" class="img-icon">
+                                            <span>Continue</span>
+                                        </section>
+                                    </button>
+                                    <button id="cancelReload" type="button" aria-label="Cancel" class="btn btn-red secondary btn-icon">
+                                        <section>
+                                            <img src="../assets/login/Cross_Icon_RealMe.png" alt="" class="img-icon">
+                                            <span>Cancel</span>
+                                        </section>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="footer" class="bg-web-tangerine">
+            <footer>
+                <div class="inner">
+                    <nav>
+                        <a href="./help.html">Help &amp; contact us</a>
+                        <a href="./help.html">Terms of use</a>
+                        <a href="./protecting-your-privacy.html">Privacy</a>
+                        <a href="./about-us.html">About this site</a>
+                    </nav>
+                    <hr>
+                    <div class="copyright"><span>© New Zealand Government.</span></div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var successMessage = document.getElementById("emailVerificationControl-CreateLogin_success_message");
+            var verificationCodeRow = document.querySelector(".verificationCode_li");
+            var sendCodeBtn = document.getElementById("emailVerificationControl-CreateLogin_but_send_code");
+            var verifyCodeBtn = document.getElementById("emailVerificationControl-CreateLogin_but_verify_code");
+            var sendNewCodeBtn = document.getElementById("emailVerificationControl-CreateLogin_but_send_new_code");
+            var changeClaimsBtn = document.getElementById("emailVerificationControl-CreateLogin_but_change_claims");
+            var emailInput = document.getElementById("email");
+            var codeInput = document.getElementById("verificationCode");
+            var usernameInput = document.getElementById("newSignInName");
+            var passwordInput = document.getElementById("newPassword");
+            var reenterPasswordInput = document.getElementById("reenterPassword");
+            var continueBtn = document.getElementById("continue");
+            var requiredFieldMissing = document.getElementById("requiredFieldMissing");
+            var fieldIncorrect = document.getElementById("fieldIncorrect");
+
+            function hidePageErrors() {
+                requiredFieldMissing.style.display = "none";
+                fieldIncorrect.style.display = "none";
+            }
+
+            function showRequiredError() {
+                hidePageErrors();
+                requiredFieldMissing.style.display = "block";
+            }
+
+            function resetVerification() {
+                hidePageErrors();
+                successMessage.style.display = "none";
+                successMessage.textContent = "";
+                verificationCodeRow.style.display = "none";
+                verificationCodeRow.setAttribute("aria-hidden", "true");
+                codeInput.value = "";
+                sendCodeBtn.style.display = "inline";
+                sendCodeBtn.setAttribute("aria-hidden", "false");
+                verifyCodeBtn.style.display = "none";
+                verifyCodeBtn.setAttribute("aria-hidden", "true");
+                sendNewCodeBtn.style.display = "none";
+                sendNewCodeBtn.setAttribute("aria-hidden", "true");
+                changeClaimsBtn.style.display = "none";
+                changeClaimsBtn.setAttribute("aria-hidden", "true");
+                emailInput.disabled = false;
+                emailInput.removeAttribute("aria-disabled");
+                [usernameInput, passwordInput, reenterPasswordInput].forEach(function (input) {
+                    input.disabled = true;
+                    input.setAttribute("aria-disabled", "true");
+                });
+                continueBtn.disabled = true;
+                continueBtn.setAttribute("aria-disabled", "true");
+                continueBtn.tabIndex = -1;
+            }
+
+            function enableAccountFields() {
+                [usernameInput, passwordInput, reenterPasswordInput].forEach(function (input) {
+                    input.disabled = false;
+                    input.removeAttribute("aria-disabled");
+                });
+                continueBtn.disabled = false;
+                continueBtn.removeAttribute("aria-disabled");
+                continueBtn.tabIndex = 0;
+            }
+
+            sendCodeBtn.addEventListener("click", function () {
+                hidePageErrors();
+                if (!emailInput.value.trim()) {
+                    showRequiredError();
+                    return;
+                }
+                successMessage.textContent = "A confirmation code has been sent to your email, please enter it below and confirm.";
+                successMessage.style.display = "block";
+                successMessage.setAttribute("aria-hidden", "false");
+                verificationCodeRow.style.display = "inline";
+                verificationCodeRow.setAttribute("aria-hidden", "false");
+                sendCodeBtn.style.display = "none";
+                sendCodeBtn.setAttribute("aria-hidden", "true");
+                verifyCodeBtn.style.display = "inline";
+                verifyCodeBtn.setAttribute("aria-hidden", "false");
+                codeInput.focus();
+            });
+
+            verifyCodeBtn.addEventListener("click", function () {
+                hidePageErrors();
+                if (!codeInput.value.trim()) {
+                    showRequiredError();
+                    return;
+                }
+                verifyCodeBtn.style.display = "none";
+                verifyCodeBtn.setAttribute("aria-hidden", "true");
+                sendNewCodeBtn.style.display = "none";
+                sendNewCodeBtn.setAttribute("aria-hidden", "true");
+                changeClaimsBtn.style.display = "inline";
+                changeClaimsBtn.setAttribute("aria-hidden", "false");
+                emailInput.disabled = true;
+                emailInput.setAttribute("aria-disabled", "true");
+                enableAccountFields();
+            });
+
+            changeClaimsBtn.addEventListener("click", resetVerification);
+
+            document.getElementById("cancelReload").addEventListener("click", function () {
+                window.location.href = "./login.html";
+            });
+
+            document.getElementById("attributeVerification").addEventListener("submit", function (event) {
+                event.preventDefault();
+                if (!continueBtn.disabled) {
+                    window.location.href = "./create-login-2.html";
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

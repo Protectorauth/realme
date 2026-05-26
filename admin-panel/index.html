@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="./admin.css">
+</head>
+<body class="auth-page">
+    <div class="auth-card">
+        <h1>Admin Panel</h1>
+        <p class="subtitle">User management for RealMe login</p>
+        <form id="adminLoginForm">
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+            <p id="loginError" class="error" hidden></p>
+            <button type="submit" class="btn primary">Log in</button>
+        </form>
+    </div>
+    <script src="./admin.js"></script>
+    <script>
+        document.getElementById("adminLoginForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            var errorEl = document.getElementById("loginError");
+            errorEl.hidden = true;
+            try {
+                await AdminAPI.login(
+                    document.getElementById("username").value.trim(),
+                    document.getElementById("password").value.trim()
+                );
+                window.location.href = "./dashboard.html";
+            } catch (err) {
+                errorEl.textContent = err.message || "Login failed.";
+                errorEl.hidden = false;
+            }
+        });
+    </script>
+</body>
+</html>
