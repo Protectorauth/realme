@@ -42,6 +42,11 @@
         .split-page-section h2 { font-weight: 300; }
         .split-page-section h2 b { font-weight: 800; }
         .third-party-logo { display: none; }
+        #global-message,
+        #agency-message,
+        .banner-message.info:not(:has(.return-link)) {
+            display: none !important;
+        }
         body {
             font-family: inter, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             -webkit-font-smoothing: antialiased;
