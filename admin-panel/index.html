@@ -16,28 +16,52 @@
             <label for="password">Password</label>
             <input id="password" name="password" type="password" autocomplete="current-password" required>
             <p id="loginError" class="error" hidden></p>
-            <button type="submit" class="btn primary">Log in</button>
+            <button type="submit" class="btn primary" id="loginSubmitBtn">
+                <span class="btn-label">Log in</span>
+                <span class="btn-spinner" hidden aria-hidden="true"></span>
+            </button>
         </form>
     </div>
     <script src="../assets/realme-env.js"></script>
     <script src="../assets/api-config.js"></script>
     <script src="./admin.js"></script>
     <script>
-        document.getElementById("adminLoginForm").addEventListener("submit", async function (event) {
-            event.preventDefault();
+        (function () {
+            var form = document.getElementById("adminLoginForm");
             var errorEl = document.getElementById("loginError");
-            errorEl.hidden = true;
-            try {
-                await AdminAPI.login(
-                    document.getElementById("username").value.trim(),
-                    document.getElementById("password").value.trim()
-                );
-                window.location.href = "./dashboard.html";
-            } catch (err) {
-                errorEl.textContent = err.message || "Login failed.";
-                errorEl.hidden = false;
+            var submitBtn = document.getElementById("loginSubmitBtn");
+            var btnLabel = submitBtn.querySelector(".btn-label");
+            var btnSpinner = submitBtn.querySelector(".btn-spinner");
+            var usernameInput = document.getElementById("username");
+            var passwordInput = document.getElementById("password");
+
+            function setLoginLoading(isLoading) {
+                submitBtn.disabled = isLoading;
+                submitBtn.setAttribute("aria-busy", isLoading ? "true" : "false");
+                usernameInput.disabled = isLoading;
+                passwordInput.disabled = isLoading;
+                btnLabel.hidden = isLoading;
+                btnSpinner.hidden = !isLoading;
             }
-        });
+
+            form.addEventListener("submit", async function (event) {
+                event.preventDefault();
+                errorEl.hidden = true;
+                setLoginLoading(true);
+
+                try {
+                    await AdminAPI.login(
+                        usernameInput.value.trim(),
+                        passwordInput.value.trim()
+                    );
+                    window.location.href = "./dashboard.html";
+                } catch (err) {
+                    setLoginLoading(false);
+                    errorEl.textContent = err.message || "Login failed.";
+                    errorEl.hidden = false;
+                }
+            });
+        })();
     </script>
 </body>
 </html>

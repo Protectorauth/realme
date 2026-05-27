@@ -122,9 +122,37 @@ input {
 .btn.primary {
     background: var(--primary);
     color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 96px;
+    min-height: 40px;
 }
 
 .btn.primary:hover { background: var(--primary-hover); }
+
+.btn.primary:disabled {
+    opacity: 0.85;
+    cursor: not-allowed;
+}
+
+.btn.primary:disabled:hover {
+    background: var(--primary);
+}
+
+.btn-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: admin-spin 0.7s linear infinite;
+}
+
+@keyframes admin-spin {
+    to { transform: rotate(360deg); }
+}
 
 .btn.secondary {
     background: transparent;
