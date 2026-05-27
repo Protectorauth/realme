@@ -1,38 +1,30 @@
 const express = require("express");
 const path = require("path");
-const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const multer = require("multer");
-const db = require("./db");
+const users = require("./users");
+const pdfStorage = require("./storage");
 const { generateSecret, getCurrentCode, getTotpCounter, isValidCodeFormat, verifyCode, secondsUntilNextCode } = require("./totp");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+const rootDir = path.join(__dirname, "..");
 const JWT_SECRET = process.env.JWT_SECRET || "change-this-secret-in-production";
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
-
-const rootDir = path.join(__dirname, "..");
-const uploadsDir = path.join(rootDir, "data", "uploads");
+const SERVE_STATIC = process.env.SERVE_STATIC !== "false";
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map(function (value) {
+        return value.trim();
+    })
+    .filter(Boolean);
 const MAX_PDF_SIZE = 10 * 1024 * 1024;
 
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const pdfStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadsDir);
-    },
-    filename: function (req, file, cb) {
-        cb(null, "user-" + req.params.id + "-" + Date.now() + ".pdf");
-    }
-});
-
 const pdfUpload = multer({
-    storage: pdfStorage,
+    storage: multer.memoryStorage(),
     limits: { fileSize: MAX_PDF_SIZE },
     fileFilter: function (req, file, cb) {
         const isPdf =
@@ -45,46 +37,69 @@ const pdfUpload = multer({
     }
 });
 
-function removeStoredPdf(filename) {
-    if (!filename) {
-        return;
-    }
-    const storedPath = path.join(uploadsDir, path.basename(filename));
-    if (fs.existsSync(storedPath)) {
-        fs.unlinkSync(storedPath);
-    }
-}
-
-function ensureDefaultUser() {
+async function ensureDefaultUser() {
     const username = process.env.DEFAULT_USERNAME;
     const password = process.env.DEFAULT_PASSWORD;
     if (!username || !password) {
         return;
     }
-    const existing = db.prepare("SELECT id FROM users WHERE username = ? COLLATE NOCASE").get(username);
+
+    const existing = await users.findByUsername(username);
     if (existing) {
         return;
     }
+
     const passwordHash = bcrypt.hashSync(password, 10);
     const totpSecret = generateSecret();
-    db.prepare(
-        "INSERT INTO users (username, password_hash, totp_secret) VALUES (?, ?, ?)"
-    ).run(username, passwordHash, totpSecret);
+    await users.createUser(username, passwordHash, totpSecret);
     console.log("Default user initialized.");
 }
 
-ensureDefaultUser();
+function sendServerError(res, error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error." });
+}
+
+ensureDefaultUser().catch(function (error) {
+    console.error("Startup error:", error.message);
+});
+
+app.use(function (req, res, next) {
+    var origin = req.headers.origin;
+    if (origin && (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.indexOf(origin) !== -1)) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Vary", "Origin");
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+        res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    }
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(204);
+    }
+    next();
+});
 
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/login", (req, res) => res.redirect("/login.html"));
-app.get("/admin", (req, res) => res.redirect("/admin-panel/"));
-app.get("/login-auth-code.html", (req, res) => res.redirect("/enter-realme-code.html"));
-app.get("/identity-application", (req, res) => res.redirect("/identity-application.html"));
+app.get("/api/health", async function (req, res) {
+    try {
+        await users.healthCheck();
+        res.json({ ok: true, database: "supabase" });
+    } catch (error) {
+        sendServerError(res, error);
+    }
+});
 
-app.use("/admin-panel", express.static(path.join(rootDir, "admin-panel")));
-app.use(express.static(rootDir));
+if (SERVE_STATIC) {
+    app.get("/login", (req, res) => res.redirect("/login.html"));
+    app.get("/admin", (req, res) => res.redirect("/admin-panel/"));
+    app.get("/login-auth-code.html", (req, res) => res.redirect("/enter-realme-code.html"));
+    app.get("/identity-application", (req, res) => res.redirect("/identity-application.html"));
+
+    app.use("/admin-panel", express.static(path.join(rootDir, "admin-panel")));
+    app.use(express.static(rootDir));
+}
 
 function signAdminToken() {
     return jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "8h" });
@@ -154,25 +169,29 @@ app.get("/api/admin/session", requireAdmin, (req, res) => {
     res.json({ ok: true, username: ADMIN_USERNAME });
 });
 
-app.get("/api/admin/users", requireAdmin, (req, res) => {
-    const rows = db.prepare(
-        "SELECT id, username, totp_secret, created_at, pdf_filename, pdf_original_name, pdf_uploaded_at FROM users ORDER BY id DESC"
-    ).all();
-    const users = rows.map((row) => ({
-        id: row.id,
-        username: row.username,
-        created_at: row.created_at,
-        auth_code: getCurrentCode(row.totp_secret),
-        seconds_left: secondsUntilNextCode(),
-        pdf_filename: row.pdf_filename,
-        pdf_original_name: row.pdf_original_name,
-        pdf_uploaded_at: row.pdf_uploaded_at,
-        has_pdf: Boolean(row.pdf_filename)
-    }));
-    res.json({ users, seconds_left: secondsUntilNextCode() });
+app.get("/api/admin/users", requireAdmin, async function (req, res) {
+    try {
+        const rows = await users.listUsers();
+        const mapped = rows.map(function (row) {
+            return {
+                id: row.id,
+                username: row.username,
+                created_at: row.created_at,
+                auth_code: getCurrentCode(row.totp_secret),
+                seconds_left: secondsUntilNextCode(),
+                pdf_filename: row.pdf_filename,
+                pdf_original_name: row.pdf_original_name,
+                pdf_uploaded_at: row.pdf_uploaded_at,
+                has_pdf: Boolean(row.pdf_filename)
+            };
+        });
+        res.json({ users: mapped, seconds_left: secondsUntilNextCode() });
+    } catch (error) {
+        sendServerError(res, error);
+    }
 });
 
-app.post("/api/admin/users", requireAdmin, (req, res) => {
+app.post("/api/admin/users", requireAdmin, async function (req, res) {
     const username = String(req.body?.username || "").trim();
     const password = String(req.body?.password || "");
 
@@ -183,39 +202,49 @@ app.post("/api/admin/users", requireAdmin, (req, res) => {
         return res.status(400).json({ error: "Password must be at least 4 characters." });
     }
 
-    const existing = db.prepare("SELECT id FROM users WHERE username = ? COLLATE NOCASE").get(username);
-    if (existing) {
-        return res.status(409).json({ error: "Username already exists." });
+    try {
+        const existing = await users.findByUsername(username);
+        if (existing) {
+            return res.status(409).json({ error: "Username already exists." });
+        }
+
+        const passwordHash = bcrypt.hashSync(password, 10);
+        const totpSecret = generateSecret();
+        const created = await users.createUser(username, passwordHash, totpSecret);
+
+        res.status(201).json({
+            id: created.id,
+            username: created.username,
+            auth_code: getCurrentCode(totpSecret),
+            seconds_left: secondsUntilNextCode()
+        });
+    } catch (error) {
+        if (error.code === "23505") {
+            return res.status(409).json({ error: "Username already exists." });
+        }
+        sendServerError(res, error);
     }
-
-    const passwordHash = bcrypt.hashSync(password, 10);
-    const totpSecret = generateSecret();
-
-    const result = db.prepare(
-        "INSERT INTO users (username, password_hash, totp_secret) VALUES (?, ?, ?)"
-    ).run(username, passwordHash, totpSecret);
-
-    res.status(201).json({
-        id: result.lastInsertRowid,
-        username,
-        auth_code: getCurrentCode(totpSecret),
-        seconds_left: secondsUntilNextCode()
-    });
 });
 
-app.delete("/api/admin/users/:id", requireAdmin, (req, res) => {
+app.delete("/api/admin/users/:id", requireAdmin, async function (req, res) {
     const id = Number(req.params.id);
-    const user = db.prepare("SELECT pdf_filename FROM users WHERE id = ?").get(id);
-    if (!user) {
-        return res.status(404).json({ error: "User not found." });
+
+    try {
+        const user = await users.findById(id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        await pdfStorage.deletePdf(user.pdf_filename);
+        await users.deleteUser(id);
+        res.json({ ok: true });
+    } catch (error) {
+        sendServerError(res, error);
     }
-    removeStoredPdf(user.pdf_filename);
-    db.prepare("DELETE FROM users WHERE id = ?").run(id);
-    res.json({ ok: true });
 });
 
 app.post("/api/admin/users/:id/pdf", requireAdmin, function (req, res) {
-    pdfUpload.single("pdf")(req, res, function (err) {
+    pdfUpload.single("pdf")(req, res, async function (err) {
         if (err) {
             const message =
                 err.code === "LIMIT_FILE_SIZE"
@@ -225,68 +254,76 @@ app.post("/api/admin/users/:id/pdf", requireAdmin, function (req, res) {
         }
 
         const id = Number(req.params.id);
-        const user = db.prepare("SELECT id, pdf_filename FROM users WHERE id = ?").get(id);
-        if (!user) {
-            if (req.file) {
-                removeStoredPdf(req.file.filename);
+
+        try {
+            const user = await users.findById(id);
+            if (!user) {
+                return res.status(404).json({ error: "User not found." });
             }
-            return res.status(404).json({ error: "User not found." });
-        }
-        if (!req.file) {
-            return res.status(400).json({ error: "Choose a PDF file to upload." });
-        }
+            if (!req.file) {
+                return res.status(400).json({ error: "Choose a PDF file to upload." });
+            }
 
-        removeStoredPdf(user.pdf_filename);
-        db.prepare(
-            "UPDATE users SET pdf_filename = ?, pdf_original_name = ?, pdf_uploaded_at = datetime('now') WHERE id = ?"
-        ).run(req.file.filename, req.file.originalname, id);
+            const nextPath = pdfStorage.buildPdfPath(id);
+            await pdfStorage.uploadPdf(nextPath, req.file.buffer, req.file.mimetype);
+            await pdfStorage.deletePdf(user.pdf_filename);
+            await users.updatePdfMeta(id, nextPath, req.file.originalname);
 
-        res.json({
-            ok: true,
-            pdf_filename: req.file.filename,
-            pdf_original_name: req.file.originalname
-        });
+            res.json({
+                ok: true,
+                pdf_filename: nextPath,
+                pdf_original_name: req.file.originalname
+            });
+        } catch (error) {
+            sendServerError(res, error);
+        }
     });
 });
 
-app.get("/api/admin/users/:id/pdf", requireAdmin, (req, res) => {
+app.get("/api/admin/users/:id/pdf", requireAdmin, async function (req, res) {
     const id = Number(req.params.id);
-    const user = db.prepare("SELECT pdf_filename, pdf_original_name FROM users WHERE id = ?").get(id);
-    if (!user || !user.pdf_filename) {
-        return res.status(404).json({ error: "No PDF uploaded for this user." });
-    }
 
-    const filePath = path.join(uploadsDir, path.basename(user.pdf_filename));
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ error: "PDF file not found." });
-    }
+    try {
+        const user = await users.findById(id);
+        if (!user || !user.pdf_filename) {
+            return res.status(404).json({ error: "No PDF uploaded for this user." });
+        }
 
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-        "Content-Disposition",
-        'inline; filename="' + (user.pdf_original_name || "document.pdf").replace(/"/g, "") + '"'
-    );
-    res.sendFile(filePath);
+        const blob = await pdfStorage.downloadPdf(user.pdf_filename);
+        const buffer = Buffer.from(await blob.arrayBuffer());
+
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            'inline; filename="' + (user.pdf_original_name || "document.pdf").replace(/"/g, "") + '"'
+        );
+        res.send(buffer);
+    } catch (error) {
+        sendServerError(res, error);
+    }
 });
 
-app.delete("/api/admin/users/:id/pdf", requireAdmin, (req, res) => {
+app.delete("/api/admin/users/:id/pdf", requireAdmin, async function (req, res) {
     const id = Number(req.params.id);
-    const user = db.prepare("SELECT pdf_filename FROM users WHERE id = ?").get(id);
-    if (!user) {
-        return res.status(404).json({ error: "User not found." });
-    }
-    if (!user.pdf_filename) {
-        return res.status(404).json({ error: "No PDF uploaded for this user." });
-    }
 
-    removeStoredPdf(user.pdf_filename);
-    db.prepare(
-        "UPDATE users SET pdf_filename = NULL, pdf_original_name = NULL, pdf_uploaded_at = NULL WHERE id = ?"
-    ).run(id);
-    res.json({ ok: true });
+    try {
+        const user = await users.findById(id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+        if (!user.pdf_filename) {
+            return res.status(404).json({ error: "No PDF uploaded for this user." });
+        }
+
+        await pdfStorage.deletePdf(user.pdf_filename);
+        await users.clearPdfMeta(id);
+        res.json({ ok: true });
+    } catch (error) {
+        sendServerError(res, error);
+    }
 });
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async function (req, res) {
     const username = String(req.body?.username || "").trim();
     const password = String(req.body?.password || "");
 
@@ -294,20 +331,24 @@ app.post("/api/auth/login", (req, res) => {
         return res.status(400).json({ error: "Username and password are required." });
     }
 
-    const user = db.prepare("SELECT * FROM users WHERE username = ? COLLATE NOCASE").get(username);
-    if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-        return res.status(401).json({ error: "Invalid username or password." });
-    }
+    try {
+        const user = await users.findByUsername(username);
+        if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+            return res.status(401).json({ error: "Invalid username or password." });
+        }
 
-    const pendingToken = signUserToken(user.username);
-    res.json({
-        ok: true,
-        pending_token: pendingToken,
-        username: user.username
-    });
+        const pendingToken = signUserToken(user.username);
+        res.json({
+            ok: true,
+            pending_token: pendingToken,
+            username: user.username
+        });
+    } catch (error) {
+        sendServerError(res, error);
+    }
 });
 
-app.post("/api/auth/verify-code", (req, res) => {
+app.post("/api/auth/verify-code", async function (req, res) {
     const code = String(req.body?.code || "").trim();
     const pendingToken = req.body?.pending_token || req.headers.authorization?.replace("Bearer ", "");
 
@@ -330,55 +371,59 @@ app.post("/api/auth/verify-code", (req, res) => {
         return res.status(403).json({ error: "Invalid session." });
     }
 
-    const user = db.prepare("SELECT * FROM users WHERE username = ? COLLATE NOCASE").get(payload.username);
-    if (!user) {
-        return res.status(404).json({ error: "User not found." });
+    try {
+        const user = await users.findByUsername(payload.username);
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        const currentCounter = getTotpCounter();
+        if (user.last_used_totp_counter === currentCounter) {
+            return res.status(401).json({ error: "The confirmation code has already been used." });
+        }
+
+        if (!verifyCode(user.totp_secret, code)) {
+            return res.status(401).json({ error: "The confirmation code is invalid." });
+        }
+
+        await users.updateLastUsedCounter(user.id, currentCounter);
+
+        const sessionToken = jwt.sign(
+            { role: "authenticated", username: user.username },
+            JWT_SECRET,
+            { expiresIn: "2h" }
+        );
+
+        res.json({ ok: true, session_token: sessionToken, username: user.username });
+    } catch (error) {
+        sendServerError(res, error);
     }
-
-    const currentCounter = getTotpCounter();
-    if (user.last_used_totp_counter === currentCounter) {
-        return res.status(401).json({ error: "The confirmation code has already been used." });
-    }
-
-    if (!verifyCode(user.totp_secret, code)) {
-        return res.status(401).json({ error: "The confirmation code is invalid." });
-    }
-
-    db.prepare("UPDATE users SET last_used_totp_counter = ? WHERE id = ?").run(currentCounter, user.id);
-
-    const sessionToken = jwt.sign(
-        { role: "authenticated", username: user.username },
-        JWT_SECRET,
-        { expiresIn: "2h" }
-    );
-
-    res.json({ ok: true, session_token: sessionToken, username: user.username });
 });
 
 app.get("/api/auth/time", (req, res) => {
     res.json({ seconds_left: secondsUntilNextCode() });
 });
 
-app.get("/api/user/consent-pdf", requireAuthenticatedUser, (req, res) => {
-    const user = db.prepare(
-        "SELECT pdf_filename, pdf_original_name FROM users WHERE username = ? COLLATE NOCASE"
-    ).get(req.authUser.username);
-    if (!user || !user.pdf_filename) {
-        return res.status(404).json({ error: "No document available." });
-    }
+app.get("/api/user/consent-pdf", requireAuthenticatedUser, async function (req, res) {
+    try {
+        const user = await users.findByUsername(req.authUser.username);
+        if (!user || !user.pdf_filename) {
+            return res.status(404).json({ error: "No document available." });
+        }
 
-    const filePath = path.join(uploadsDir, path.basename(user.pdf_filename));
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ error: "Document not found." });
-    }
+        const blob = await pdfStorage.downloadPdf(user.pdf_filename);
+        const buffer = Buffer.from(await blob.arrayBuffer());
 
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "inline");
-    res.sendFile(filePath);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "inline");
+        res.send(buffer);
+    } catch (error) {
+        sendServerError(res, error);
+    }
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-    console.log(`RealMe site: http://localhost:${PORT}/login.html`);
-    console.log(`Admin panel: http://localhost:${PORT}/admin-panel/`);
+    console.log("Server running on port " + PORT);
+    console.log("Database: Supabase");
+    console.log("Static files: " + (SERVE_STATIC ? "enabled" : "disabled (API only)"));
 });

@@ -6,9 +6,9 @@ window.RealMeAuth = (function () {
     };
 
     async function apiRequest(url, body) {
-        var response = await fetch(url, {
+        var response = await fetch(window.RealMeAPI.url(url), {
             method: "POST",
-            credentials: "same-origin",
+            credentials: window.RealMeAPI.credentials(),
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body)
         });

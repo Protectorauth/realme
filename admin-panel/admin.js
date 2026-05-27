@@ -1,8 +1,19 @@
 window.AdminAPI = (function () {
+    var ADMIN_TOKEN_KEY = "realme_admin_token";
+
+    function authHeaders(extra) {
+        var headers = Object.assign({ "Content-Type": "application/json" }, extra || {});
+        var token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+        if (token) {
+            headers.Authorization = "Bearer " + token;
+        }
+        return headers;
+    }
+
     async function request(url, options) {
-        var response = await fetch(url, Object.assign({
-            credentials: "same-origin",
-            headers: { "Content-Type": "application/json" }
+        var response = await fetch(window.RealMeAPI.url(url), Object.assign({
+            credentials: window.RealMeAPI.credentials(),
+            headers: authHeaders()
         }, options || {}));
 
         var data = null;
@@ -22,9 +33,16 @@ window.AdminAPI = (function () {
     }
 
     async function uploadRequest(url, formData) {
-        var response = await fetch(url, {
+        var headers = {};
+        var token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+        if (token) {
+            headers.Authorization = "Bearer " + token;
+        }
+
+        var response = await fetch(window.RealMeAPI.url(url), {
             method: "POST",
-            credentials: "same-origin",
+            credentials: window.RealMeAPI.credentials(),
+            headers: headers,
             body: formData
         });
 
@@ -49,9 +67,15 @@ window.AdminAPI = (function () {
             return request("/api/admin/login", {
                 method: "POST",
                 body: JSON.stringify({ username: username, password: password })
+            }).then(function (data) {
+                if (data.token) {
+                    sessionStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+                }
+                return data;
             });
         },
         logout: function () {
+            sessionStorage.removeItem(ADMIN_TOKEN_KEY);
             return request("/api/admin/logout", { method: "POST" });
         },
         checkSession: function () {
@@ -82,7 +106,7 @@ window.AdminAPI = (function () {
             });
         },
         getUserPdfUrl: function (id) {
-            return "/api/admin/users/" + encodeURIComponent(id) + "/pdf";
+            return window.RealMeAPI.url("/api/admin/users/" + encodeURIComponent(id) + "/pdf");
         }
     };
 })();

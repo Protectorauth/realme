@@ -3,11 +3,12 @@
   "private": true,
   "scripts": {
     "start": "node api/server.js",
-    "dev": "node api/server.js"
+    "dev": "node api/server.js",
+    "build:pages": "node scripts/build-pages-env.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.7.0",
     "cookie-parser": "^1.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",

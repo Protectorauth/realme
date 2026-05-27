@@ -183,7 +183,8 @@ window.RealMeManage = (function () {
         panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
         try {
-            var response = await fetch("/api/user/consent-pdf", {
+            var response = await fetch(window.RealMeAPI.url("/api/user/consent-pdf"), {
+                credentials: window.RealMeAPI.credentials(),
                 headers: { Authorization: "Bearer " + sessionToken }
             });
 
