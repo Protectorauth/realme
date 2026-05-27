@@ -107,6 +107,15 @@ window.AdminAPI = (function () {
         },
         getUserPdfUrl: function (id) {
             return window.RealMeAPI.url("/api/admin/users/" + encodeURIComponent(id) + "/pdf");
+        },
+        getLoginBanner: function () {
+            return request("/api/admin/login-banner");
+        },
+        updateLoginBanner: function (visible, html) {
+            return request("/api/admin/login-banner", {
+                method: "PUT",
+                body: JSON.stringify({ visible: visible, html: html })
+            });
         }
     };
 })();

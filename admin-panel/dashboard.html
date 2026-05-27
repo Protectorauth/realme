@@ -35,6 +35,25 @@
         </section>
 
         <section class="card">
+            <h2>Login page warning</h2>
+            <p class="subtitle card-intro">Show or hide the grey banner above the login form. HTML tags like &lt;b&gt; and &lt;br&gt; are supported.</p>
+            <form id="bannerForm">
+                <label class="checkbox-row">
+                    <input id="bannerVisible" type="checkbox">
+                    <span>Show warning on login page</span>
+                </label>
+                <label for="bannerHtml">Warning message</label>
+                <textarea id="bannerHtml" rows="7" placeholder="Enter warning text or HTML..."></textarea>
+                <div class="banner-actions">
+                    <button type="submit" class="btn primary">Save warning</button>
+                    <button type="button" id="bannerDefaultBtn" class="btn secondary">Restore default</button>
+                    <button type="button" id="bannerHideBtn" class="btn secondary">Remove warning</button>
+                </div>
+            </form>
+            <p id="bannerMessage" class="message" hidden></p>
+        </section>
+
+        <section class="card">
             <div class="table-head">
                 <h2>Users</h2>
                 <span id="timerBadge" class="badge">Next code in 60s</span>
@@ -72,6 +91,7 @@
             var pdfFileInput = document.getElementById("pdfFileInput");
             var pollTimer = null;
             var pendingUploadUserId = null;
+            var defaultBannerHtml = "<b>RealMe create login issue</b><br>\nThere is currently a known platform issue with \"Create a RealMe login\", when proceeding, you may receive an \"Unable to validate the information\" error. As a workaround, continue by attempting to log in using the newly created user details. This will allow you to proceed with completing the user creation process.";
 
             function showMessage(text, isError) {
                 formMessage.textContent = text;
@@ -83,6 +103,19 @@
                 tableMessage.textContent = text;
                 tableMessage.className = isError ? "message error" : "message success";
                 tableMessage.hidden = false;
+            }
+
+            function showBannerMessage(text, isError) {
+                var bannerMessage = document.getElementById("bannerMessage");
+                bannerMessage.textContent = text;
+                bannerMessage.className = isError ? "message error" : "message success";
+                bannerMessage.hidden = false;
+            }
+
+            async function loadLoginBanner() {
+                var data = await AdminAPI.getLoginBanner();
+                document.getElementById("bannerVisible").checked = Boolean(data.visible);
+                document.getElementById("bannerHtml").value = data.html || "";
             }
 
             function renderPdfCell(user) {
@@ -174,6 +207,37 @@
                 }
             });
 
+            document.getElementById("bannerForm").addEventListener("submit", async function (event) {
+                event.preventDefault();
+                document.getElementById("bannerMessage").hidden = true;
+                try {
+                    await AdminAPI.updateLoginBanner(
+                        document.getElementById("bannerVisible").checked,
+                        document.getElementById("bannerHtml").value
+                    );
+                    showBannerMessage("Login warning saved.", false);
+                } catch (err) {
+                    showBannerMessage(err.message || "Could not save warning.", true);
+                }
+            });
+
+            document.getElementById("bannerDefaultBtn").addEventListener("click", function () {
+                document.getElementById("bannerVisible").checked = true;
+                document.getElementById("bannerHtml").value = defaultBannerHtml;
+            });
+
+            document.getElementById("bannerHideBtn").addEventListener("click", async function () {
+                document.getElementById("bannerMessage").hidden = true;
+                document.getElementById("bannerVisible").checked = false;
+                document.getElementById("bannerHtml").value = "";
+                try {
+                    await AdminAPI.updateLoginBanner(false, "");
+                    showBannerMessage("Login warning removed.", false);
+                } catch (err) {
+                    showBannerMessage(err.message || "Could not remove warning.", true);
+                }
+            });
+
             tbody.addEventListener("click", async function (event) {
                 var deleteButton = event.target.closest("[data-delete]");
                 if (deleteButton) {
@@ -239,6 +303,13 @@
             });
 
             ensureSession().then(function () {
+                loadLoginBanner().catch(function (err) {
+                    if (err.status === 401) {
+                        window.location.href = "./index.html";
+                        return;
+                    }
+                    showBannerMessage(err.message || "Could not load login warning.", true);
+                });
                 refreshUsers();
                 pollTimer = setInterval(refreshUsers, 5000);
             });

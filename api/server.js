@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const multer = require("multer");
 const users = require("./users");
 const pdfStorage = require("./storage");
+const loginBanner = require("./login-banner");
 const { generateSecret, getCurrentCode, getTotpCounter, isValidCodeFormat, verifyCode, secondsUntilNextCode } = require("./totp");
 
 const app = express();
@@ -91,6 +92,18 @@ app.get("/api/health", async function (req, res) {
     }
 });
 
+app.get("/api/public/login-banner", async function (req, res) {
+    try {
+        const banner = await loginBanner.getBanner();
+        res.json({
+            visible: banner.is_visible && Boolean(banner.message_html),
+            html: banner.is_visible ? banner.message_html : ""
+        });
+    } catch (error) {
+        sendServerError(res, error);
+    }
+});
+
 if (SERVE_STATIC) {
     app.get("/login", (req, res) => res.redirect("/login.html"));
     app.get("/admin", (req, res) => res.redirect("/admin-panel/"));
@@ -167,6 +180,40 @@ app.post("/api/admin/logout", (req, res) => {
 
 app.get("/api/admin/session", requireAdmin, (req, res) => {
     res.json({ ok: true, username: ADMIN_USERNAME });
+});
+
+app.get("/api/admin/login-banner", requireAdmin, async function (req, res) {
+    try {
+        const banner = await loginBanner.getBanner();
+        res.json({
+            visible: banner.is_visible,
+            html: banner.message_html,
+            updated_at: banner.updated_at
+        });
+    } catch (error) {
+        sendServerError(res, error);
+    }
+});
+
+app.put("/api/admin/login-banner", requireAdmin, async function (req, res) {
+    const visible = Boolean(req.body?.visible);
+    const html = loginBanner.sanitizeBannerHtml(req.body?.html);
+
+    if (visible && !html) {
+        return res.status(400).json({ error: "Message is required when the warning is visible." });
+    }
+
+    try {
+        const banner = await loginBanner.updateBanner(visible, html);
+        res.json({
+            ok: true,
+            visible: banner.is_visible,
+            html: banner.message_html,
+            updated_at: banner.updated_at
+        });
+    } catch (error) {
+        sendServerError(res, error);
+    }
 });
 
 app.get("/api/admin/users", requireAdmin, async function (req, res) {
