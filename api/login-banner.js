@@ -23,6 +23,24 @@ function mapBanner(row) {
     };
 }
 
+function isMissingTableError(error) {
+    const message = String(error?.message || error?.details || "");
+    const code = String(error?.code || "");
+    return (
+        code === "PGRST205" ||
+        code === "42P01" ||
+        message.includes("Could not find the table") ||
+        (message.includes("login_banner") && message.includes("does not exist"))
+    );
+}
+
+function toClientError(error) {
+    if (isMissingTableError(error)) {
+        return "Login banner table is missing. Run supabase/add-login-banner.sql in Supabase SQL Editor.";
+    }
+    return "Server error.";
+}
+
 async function getBanner() {
     const { data, error } = await supabase
         .from("login_banner")
@@ -44,11 +62,14 @@ async function getBanner() {
 async function ensureDefault() {
     const { data, error } = await supabase
         .from("login_banner")
-        .upsert({
-            id: 1,
-            is_visible: true,
-            message_html: DEFAULT_MESSAGE_HTML
-        })
+        .upsert(
+            {
+                id: 1,
+                is_visible: true,
+                message_html: DEFAULT_MESSAGE_HTML
+            },
+            { onConflict: "id" }
+        )
         .select("is_visible, message_html, updated_at")
         .single();
 
@@ -61,23 +82,42 @@ async function ensureDefault() {
 
 async function updateBanner(isVisible, messageHtml) {
     const payload = {
-        id: 1,
         is_visible: Boolean(isVisible),
         message_html: sanitizeBannerHtml(messageHtml),
         updated_at: new Date().toISOString()
     };
 
-    const { data, error } = await supabase
+    const { data: existing, error: readError } = await supabase
         .from("login_banner")
-        .upsert(payload)
-        .select("is_visible, message_html, updated_at")
-        .single();
+        .select("id")
+        .eq("id", 1)
+        .maybeSingle();
 
-    if (error) {
-        throw error;
+    if (readError) {
+        throw readError;
     }
 
-    return mapBanner(data);
+    let result;
+    if (existing) {
+        result = await supabase
+            .from("login_banner")
+            .update(payload)
+            .eq("id", 1)
+            .select("is_visible, message_html, updated_at")
+            .single();
+    } else {
+        result = await supabase
+            .from("login_banner")
+            .insert(Object.assign({ id: 1 }, payload))
+            .select("is_visible, message_html, updated_at")
+            .single();
+    }
+
+    if (result.error) {
+        throw result.error;
+    }
+
+    return mapBanner(result.data);
 }
 
 module.exports = {
@@ -85,5 +125,6 @@ module.exports = {
     getBanner,
     ensureDefault,
     updateBanner,
-    sanitizeBannerHtml
+    sanitizeBannerHtml,
+    toClientError
 };

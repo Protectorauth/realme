@@ -100,7 +100,8 @@ app.get("/api/public/login-banner", async function (req, res) {
             html: banner.is_visible ? banner.message_html : ""
         });
     } catch (error) {
-        sendServerError(res, error);
+        console.error(error);
+        res.status(500).json({ error: loginBanner.toClientError(error) });
     }
 });
 
@@ -191,7 +192,8 @@ app.get("/api/admin/login-banner", requireAdmin, async function (req, res) {
             updated_at: banner.updated_at
         });
     } catch (error) {
-        sendServerError(res, error);
+        console.error(error);
+        res.status(500).json({ error: loginBanner.toClientError(error) });
     }
 });
 
@@ -212,7 +214,8 @@ app.put("/api/admin/login-banner", requireAdmin, async function (req, res) {
             updated_at: banner.updated_at
         });
     } catch (error) {
-        sendServerError(res, error);
+        console.error(error);
+        res.status(500).json({ error: loginBanner.toClientError(error) });
     }
 });
 
