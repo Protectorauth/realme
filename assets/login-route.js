@@ -13,9 +13,20 @@ window.RealMeLoginRoute = (function () {
         return path + "?" + query;
     }
 
+    function isLegacyLoginPath(current) {
+        return (
+            current === "/login" ||
+            current.endsWith("/login") ||
+            current.endsWith("/login.html")
+        );
+    }
+
     function redirectFromLegacyLoginPage() {
-        var current = window.location.pathname.replace(/\\/g, "/");
-        if (current.endsWith("/login.html")) {
+        var current = window.location.pathname.replace(/\\/g, "/").replace(/\/+$/, "");
+        if (current === "") {
+            current = "/";
+        }
+        if (isLegacyLoginPath(current)) {
             window.location.replace(url());
         }
     }

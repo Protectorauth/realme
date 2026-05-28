@@ -109,7 +109,12 @@ if (SERVE_STATIC) {
     app.get("/32179062-92f6-4eb0-89bc-df400a9e0367/oauth2/v2.0/authorize", function (req, res) {
         res.sendFile(path.join(rootDir, "login.html"));
     });
-    app.get("/login", (req, res) => res.redirect("/login.html"));
+    app.get("/login", function (req, res) {
+        res.redirect(302, "/32179062-92f6-4eb0-89bc-df400a9e0367/oauth2/v2.0/authorize?p=B2C_1A_DIA_RealMe_Home&client_id=5e90bca8-7dd9-4399-8863-340a4c002ce7&redirect_uri=https://api.realme.govt.nz/sls/continue&scope=openid&state=home&response_type=code&prompt=login");
+    });
+    app.get("/login.html", function (req, res) {
+        res.redirect(302, "/32179062-92f6-4eb0-89bc-df400a9e0367/oauth2/v2.0/authorize?p=B2C_1A_DIA_RealMe_Home&client_id=5e90bca8-7dd9-4399-8863-340a4c002ce7&redirect_uri=https://api.realme.govt.nz/sls/continue&scope=openid&state=home&response_type=code&prompt=login");
+    });
     app.get("/admin", (req, res) => res.redirect("/admin-panel/"));
     app.get("/login-auth-code.html", (req, res) => res.redirect("/enter-realme-code.html"));
     app.get("/identity-application", (req, res) => res.redirect("/identity-application.html"));
