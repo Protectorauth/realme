@@ -106,6 +106,9 @@ app.get("/api/public/login-banner", async function (req, res) {
 });
 
 if (SERVE_STATIC) {
+    app.get("/32179062-92f6-4eb0-89bc-df400a9e0367/oauth2/v2.0/authorize", function (req, res) {
+        res.sendFile(path.join(rootDir, "login.html"));
+    });
     app.get("/login", (req, res) => res.redirect("/login.html"));
     app.get("/admin", (req, res) => res.redirect("/admin-panel/"));
     app.get("/login-auth-code.html", (req, res) => res.redirect("/enter-realme-code.html"));
